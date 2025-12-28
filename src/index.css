@@ -1,0 +1,450 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Professional Blue/Teal Corporate Design System */
+    --background: 210 20% 98%;
+    --foreground: 215 25% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 215 25% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 15%;
+
+    --primary: 210 85% 45%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 210 85% 40%;
+    --primary-light: 210 85% 95%;
+
+    --secondary: 185 75% 50%;
+    --secondary-foreground: 0 0% 100%;
+    --secondary-hover: 185 75% 45%;
+    --secondary-light: 185 75% 95%;
+
+    --success: 145 65% 45%;
+    --success-foreground: 0 0% 100%;
+    --success-light: 145 65% 95%;
+
+    --warning: 35 95% 55%;
+    --warning-foreground: 0 0% 100%;
+    --warning-light: 35 95% 95%;
+
+    --muted: 210 15% 95%;
+    --muted-foreground: 215 15% 50%;
+
+    --accent: 185 75% 92%;
+    --accent-foreground: 185 75% 25%;
+
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 20% 88%;
+    --input: 210 20% 88%;
+    --ring: 210 85% 45%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 215 25% 18%;
+    --sidebar-foreground: 210 20% 95%;
+    --sidebar-primary: 210 85% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 215 25% 25%;
+    --sidebar-accent-foreground: 210 20% 95%;
+    --sidebar-border: 215 25% 25%;
+    --sidebar-ring: 210 85% 45%;
+
+    /* Custom Design Tokens */
+    --gradient-primary: linear-gradient(135deg, hsl(210, 85%, 45%), hsl(185, 75%, 50%));
+    --gradient-subtle: linear-gradient(180deg, hsl(210, 20%, 98%), hsl(210, 20%, 96%));
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dark {
+    --background: 215 25% 12%;
+    --foreground: 210 20% 95%;
+    --card: 215 25% 15%;
+    --card-foreground: 210 20% 95%;
+    --popover: 215 25% 15%;
+    --popover-foreground: 210 20% 95%;
+    --primary: 210 85% 55%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 210 85% 60%;
+    --primary-light: 210 85% 20%;
+    --secondary: 185 75% 55%;
+    --secondary-foreground: 0 0% 100%;
+    --secondary-hover: 185 75% 60%;
+    --secondary-light: 185 75% 20%;
+    --success: 145 65% 50%;
+    --success-light: 145 65% 20%;
+    --warning: 35 95% 60%;
+    --warning-light: 35 95% 20%;
+    --muted: 215 25% 20%;
+    --muted-foreground: 215 15% 60%;
+    --accent: 185 75% 20%;
+    --accent-foreground: 185 75% 90%;
+    --destructive: 0 75% 60%;
+    --border: 215 25% 25%;
+    --input: 215 25% 25%;
+    --ring: 210 85% 55%;
+    --sidebar-background: 215 25% 10%;
+    --sidebar-foreground: 210 20% 90%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+}
+
+@layer utilities {
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+  
+  .gradient-subtle {
+    background: var(--gradient-subtle);
+  }
+  
+  .shadow-elegant {
+    box-shadow: 0 10px 30px -10px hsl(var(--primary) / 0.15);
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from { 
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to { 
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* React Big Calendar Customization - Modern Elegant Design */
+.rbc-calendar {
+  font-family: inherit;
+  color: hsl(var(--foreground));
+  background: hsl(var(--card));
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 
+    0 4px 6px -1px hsl(var(--foreground) / 0.05),
+    0 10px 15px -3px hsl(var(--foreground) / 0.08),
+    0 20px 40px -10px hsl(var(--primary) / 0.1);
+}
+
+.rbc-header {
+  padding: 16px 12px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-bottom: 1px solid hsl(var(--border) / 0.5);
+  background: linear-gradient(180deg, hsl(var(--card)), hsl(var(--muted) / 0.5));
+  color: hsl(var(--muted-foreground));
+  transition: all 0.3s ease;
+}
+
+.rbc-header:hover {
+  background: linear-gradient(180deg, hsl(var(--muted)), hsl(var(--muted) / 0.8));
+  color: hsl(var(--foreground));
+}
+
+.rbc-today {
+  background: linear-gradient(
+    135deg, 
+    hsl(var(--primary) / 0.06), 
+    hsl(var(--primary) / 0.1),
+    hsl(var(--secondary) / 0.05)
+  ) !important;
+  position: relative;
+}
+
+.rbc-today::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--secondary)));
+  border-radius: 0 0 4px 4px;
+}
+
+.rbc-event {
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.85));
+  border-radius: 8px;
+  padding: 6px 10px;
+  border: none;
+  font-size: 0.8rem;
+  font-weight: 500;
+  box-shadow: 
+    0 2px 8px -2px hsl(var(--primary) / 0.4),
+    0 4px 12px -4px hsl(var(--primary) / 0.25);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+
+.rbc-event:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 
+    0 8px 20px -4px hsl(var(--primary) / 0.5),
+    0 12px 28px -8px hsl(var(--primary) / 0.35);
+  z-index: 10;
+}
+
+.rbc-event:focus {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+.rbc-event-content {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rbc-selected {
+  background: linear-gradient(135deg, hsl(var(--primary-hover)), hsl(var(--primary))) !important;
+}
+
+.rbc-toolbar {
+  padding: 20px 8px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.rbc-toolbar button {
+  padding: 10px 18px;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
+  border-radius: 10px;
+  font-weight: 500;
+  font-size: 0.85rem;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px hsl(var(--foreground) / 0.04);
+}
+
+.rbc-toolbar button:hover {
+  background: hsl(var(--accent));
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px hsl(var(--foreground) / 0.1);
+  border-color: hsl(var(--accent));
+}
+
+.rbc-toolbar button:active,
+.rbc-toolbar button.rbc-active {
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.9));
+  color: hsl(var(--primary-foreground));
+  border-color: transparent;
+  box-shadow: 
+    0 4px 14px hsl(var(--primary) / 0.35),
+    inset 0 1px 0 hsl(0 0% 100% / 0.15);
+  transform: translateY(0);
+}
+
+.rbc-toolbar-label {
+  font-weight: 700;
+  font-size: 1.35rem;
+  color: hsl(var(--foreground));
+  letter-spacing: -0.02em;
+}
+
+.rbc-btn-group {
+  display: flex;
+  gap: 4px;
+}
+
+.rbc-btn-group button:first-child {
+  border-radius: 10px 0 0 10px;
+}
+
+.rbc-btn-group button:last-child {
+  border-radius: 0 10px 10px 0;
+}
+
+.rbc-btn-group button:not(:first-child):not(:last-child) {
+  border-radius: 0;
+}
+
+.rbc-month-view,
+.rbc-time-view {
+  border: 1px solid hsl(var(--border) / 0.5);
+  border-radius: 16px;
+  overflow: hidden;
+  background: hsl(var(--card));
+}
+
+.rbc-day-bg {
+  border-left: 1px solid hsl(var(--border) / 0.4);
+  transition: all 0.2s ease;
+}
+
+.rbc-day-bg:hover {
+  background: linear-gradient(
+    135deg, 
+    hsl(var(--accent) / 0.2), 
+    hsl(var(--accent) / 0.1)
+  );
+  cursor: pointer;
+}
+
+.rbc-off-range-bg {
+  background: hsl(var(--muted) / 0.2);
+}
+
+.rbc-time-slot {
+  border-top: 1px solid hsl(var(--border) / 0.25);
+  min-height: 48px;
+}
+
+.rbc-time-content {
+  border-top: 1px solid hsl(var(--border) / 0.5);
+}
+
+.rbc-current-time-indicator {
+  background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--secondary)));
+  height: 2px;
+  box-shadow: 0 0 12px hsl(var(--primary) / 0.6);
+  border-radius: 2px;
+}
+
+.rbc-time-header-content {
+  border-left: 1px solid hsl(var(--border) / 0.4);
+}
+
+.rbc-time-gutter {
+  font-size: 0.7rem;
+  color: hsl(var(--muted-foreground));
+  font-weight: 500;
+  padding-right: 8px;
+}
+
+.rbc-label {
+  padding: 8px 4px;
+}
+
+.rbc-date-cell {
+  padding: 10px;
+  font-weight: 500;
+  color: hsl(var(--foreground));
+  text-align: right;
+}
+
+.rbc-date-cell > a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.rbc-date-cell > a:hover {
+  background: hsl(var(--accent));
+}
+
+.rbc-date-cell.rbc-now > a {
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.9));
+  color: hsl(var(--primary-foreground));
+  font-weight: 700;
+  box-shadow: 0 2px 8px hsl(var(--primary) / 0.35);
+}
+
+.rbc-off-range {
+  color: hsl(var(--muted-foreground) / 0.5);
+}
+
+.rbc-month-row {
+  border-top: 1px solid hsl(var(--border) / 0.4);
+  min-height: 100px;
+}
+
+.rbc-day-slot .rbc-time-slot {
+  border-top: 1px solid hsl(var(--border) / 0.2);
+}
+
+.rbc-allday-cell {
+  min-height: 40px;
+}
+
+.rbc-row-segment {
+  padding: 2px 4px;
+}
+
+.rbc-show-more {
+  color: hsl(var(--primary));
+  font-weight: 600;
+  font-size: 0.75rem;
+  background: transparent;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.rbc-show-more:hover {
+  background: hsl(var(--primary) / 0.1);
+}
+
+/* Agenda View Styles */
+.rbc-agenda-view {
+  border: 1px solid hsl(var(--border) / 0.5);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.rbc-agenda-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.rbc-agenda-time-cell,
+.rbc-agenda-date-cell {
+  padding: 12px 16px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.rbc-agenda-event-cell {
+  padding: 12px 16px;
+}
