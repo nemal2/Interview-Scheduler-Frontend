@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { authAPI } from '@/services/api';
 
 const AuthContext = createContext(null);
 
@@ -16,35 +17,57 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is logged in (from localStorage)
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
+    // Check if user is logged in
+    const initAuth = async () => {
+      const storedUser = localStorage.getItem('user');
+      const token = localStorage.getItem('token');
+      
+      if (storedUser && token) {
+        try {
+          // Verify token is still valid
+          await authAPI.verify();
+          setUser(JSON.parse(storedUser));
+        } catch (error) {
+          // Token invalid, clear storage
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+        }
+      }
+      setLoading(false);
+    };
+
+    initAuth();
   }, []);
 
-  const login = (email, password) => {
-    // Mock login - replace with actual API call
-    const mockUser = {
-      id: 1,
-      email,
-      firstName: email === 'admin@mitra.com' ? 'Admin' : 
-                 email === 'hr@mitra.com' ? 'Sarah' : 'John',
-      lastName: email === 'admin@mitra.com' ? 'User' : 
-                email === 'hr@mitra.com' ? 'Johnson' : 'Doe',
-      role: email === 'admin@mitra.com' ? 'ADMIN' : 
-            email === 'hr@mitra.com' ? 'HR' : 'INTERVIEWER',
-      profilePicture: null,
-    };
-    setUser(mockUser);
-    localStorage.setItem('user', JSON.stringify(mockUser));
-    return Promise.resolve(mockUser);
+  const login = async (email, password) => {
+    try {
+      const response = await authAPI.login(email, password);
+      
+      const userData = {
+        id: response.id,
+        email: response.email,
+        firstName: response.firstName,
+        lastName: response.lastName,
+        role: response.role,
+        profilePicture: response.profilePictureUrl,
+      };
+      
+      // Store token and user data
+      localStorage.setItem('token', response.token);
+      localStorage.setItem('user', JSON.stringify(userData));
+      setUser(userData);
+      
+      return userData;
+    } catch (error) {
+      console.error('Login error:', error);
+      throw new Error(error.response?.data?.message || 'Login failed');
+    }
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
+    localStorage.removeItem('token');
   };
 
   const value = {

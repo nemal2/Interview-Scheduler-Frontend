@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,45 +7,109 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, Mail, Phone, Briefcase, Award, Edit2, Save, Plus, X } from 'lucide-react';
+import { User, Mail, Phone, Briefcase, Award, Edit2, Save, Plus, X, Loader2, Search, ChevronDown } from 'lucide-react';
 import Layout from '@/components/layout/Layout';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
+import profileAPI from '@/services/profileService';
 
-const designationOptions = [
-  'Software Engineer',
-  'Senior Software Engineer',
-  'Tech Lead',
-  'Senior Tech Lead',
-  'Architect',
-  'Principal Engineer',
-  'Engineering Manager',
-  'Director of Engineering'
+const SKILL_CATEGORIES = [
+  'Programming Language',
+  'Framework',
+  'Database',
+  'Cloud Platform',
+  'DevOps',
+  'Testing',
+  'Mobile',
+  'Architecture',
+  'Concept',
+  'Methodology',
+  'AI/ML',
+  'Other'
 ];
 
 const ProfilePage = () => {
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [newSkill, setNewSkill] = useState('');
-  const [newPreference, setNewPreference] = useState('');
-  const [profile, setProfile] = useState({
-    firstName: user?.firstName || 'John',
-    lastName: user?.lastName || 'Doe',
-    email: user?.email || 'john.doe@mitra.com',
-    phone: '+1 (555) 123-4567',
-    department: 'Engineering',
-    designation: 'Senior Software Engineer',
-    employeeCode: 'ENG-2024-001',
-    yearsOfExperience: 8,
-    bio: 'Experienced software engineer specializing in full-stack development with a focus on Java and React technologies. Passionate about mentoring junior developers and conducting technical interviews.',
-    technologies: ['Java', 'Spring Boot', 'React', 'TypeScript', 'AWS', 'Docker', 'Microservices'],
-    willingToInterview: ['Java', 'Spring Boot', 'React', 'System Design'],
-  });
+  const [newSkillCategory, setNewSkillCategory] = useState('Other');
+  const [showSkillDropdown, setShowSkillDropdown] = useState(false);
+  const [showNewSkillModal, setShowNewSkillModal] = useState(false);
+  const [filteredTechnologies, setFilteredTechnologies] = useState([]);
+  const [profile, setProfile] = useState(null);
+  const [technologies, setTechnologies] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [designations, setDesignations] = useState([]);
+  const [interviewerTechs, setInterviewerTechs] = useState([]);
 
-  const handleSave = () => {
-    setIsEditing(false);
-    toast.success('Profile updated successfully!');
+  useEffect(() => {
+    loadProfileData();
+  }, []);
+
+  useEffect(() => {
+    // Filter technologies based on input
+    if (newSkill.trim()) {
+      const filtered = technologies.filter(tech => 
+        tech.name.toLowerCase().includes(newSkill.toLowerCase()) &&
+        !interviewerTechs.some(it => it.technology.id === tech.id)
+      );
+      setFilteredTechnologies(filtered);
+      setShowSkillDropdown(filtered.length > 0 || newSkill.length > 0);
+    } else {
+      setFilteredTechnologies([]);
+      setShowSkillDropdown(false);
+    }
+  }, [newSkill, technologies, interviewerTechs]);
+
+  const loadProfileData = async () => {
+    try {
+      setLoading(true);
+      const [profileData, techList, deptList, desList, interviewerTechList] = await Promise.all([
+        profileAPI.getProfile(),
+        profileAPI.getAllTechnologies(),
+        profileAPI.getDepartments(),
+        profileAPI.getDesignations(),
+        profileAPI.getInterviewerTechnologies()
+      ]);
+
+      setProfile(profileData);
+      setTechnologies(techList);
+      setDepartments(deptList);
+      setDesignations(desList);
+      setInterviewerTechs(interviewerTechList);
+    } catch (error) {
+      console.error('Error loading profile:', error);
+      toast.error('Failed to load profile data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      await profileAPI.updateProfile({
+        phone: profile.phone,
+        profilePictureUrl: profile.profilePictureUrl,
+        departmentId: profile.department?.id,
+        designationId: profile.currentDesignation?.id,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        bio: profile.bio,
+        yearsOfExperience: profile.yearsOfExperience
+      });
+      
+      setIsEditing(false);
+      toast.success('Profile updated successfully!');
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      toast.error('Failed to update profile');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleChange = (field, value) => {
@@ -53,34 +117,121 @@ const ProfilePage = () => {
   };
 
   const getInitials = () => {
-    return `${profile.firstName[0]}${profile.lastName[0]}`.toUpperCase();
+    if (!profile) return 'U';
+    return `${profile.firstName?.[0] || ''}${profile.lastName?.[0] || ''}`.toUpperCase();
   };
 
-  const handleAddSkill = () => {
-    if (newSkill.trim() && !profile.technologies.includes(newSkill.trim())) {
-      setProfile({ ...profile, technologies: [...profile.technologies, newSkill.trim()] });
+  const handleSelectFromDropdown = async (tech) => {
+    setShowSkillDropdown(false);
+    setNewSkill('');
+    await addSkillById(tech.id);
+  };
+
+  const handleAddSkill = async () => {
+    if (!newSkill.trim()) return;
+    
+    setShowSkillDropdown(false);
+    
+    try {
+      // Check if exact match exists in dropdown
+      const exactMatch = technologies.find(
+        t => t.name.toLowerCase() === newSkill.trim().toLowerCase()
+      );
+
+      if (exactMatch) {
+        await addSkillById(exactMatch.id);
+        setNewSkill('');
+      } else {
+        // Show modal to categorize new skill
+        setShowNewSkillModal(true);
+      }
+    } catch (error) {
+      console.error('Error adding skill:', error);
+      toast.error('Failed to add skill');
+    }
+  };
+
+  const handleCreateAndAddSkill = async () => {
+    if (!newSkill.trim()) return;
+
+    try {
+      // Create new technology with category
+      const newTech = await profileAPI.createTechnology(newSkill.trim(), newSkillCategory);
+      setTechnologies([...technologies, newTech]);
+      await addSkillById(newTech.id);
+      
+      // Reset form
       setNewSkill('');
+      setNewSkillCategory('Other');
+      setShowNewSkillModal(false);
+      
+      toast.success(`Created and added "${newTech.name}"`);
+    } catch (error) {
+      console.error('Error creating skill:', error);
+      toast.error('Failed to create skill');
+    }
+  };
+
+  const addSkillById = async (technologyId) => {
+    try {
+      // Check if already added
+      if (interviewerTechs.some(it => it.technology.id === technologyId)) {
+        toast.warning('This skill is already added');
+        return;
+      }
+
+      const newInterviewerTech = await profileAPI.addInterviewerTechnology(technologyId, 0);
+      setInterviewerTechs([...interviewerTechs, newInterviewerTech]);
       toast.success('Skill added');
+    } catch (error) {
+      console.error('Error adding skill:', error);
+      toast.error(error.response?.data?.message || 'Failed to add skill');
     }
   };
 
-  const handleRemoveSkill = (skill) => {
-    setProfile({ ...profile, technologies: profile.technologies.filter(s => s !== skill) });
-    toast.success('Skill removed');
-  };
-
-  const handleAddPreference = () => {
-    if (newPreference.trim() && !profile.willingToInterview.includes(newPreference.trim())) {
-      setProfile({ ...profile, willingToInterview: [...profile.willingToInterview, newPreference.trim()] });
-      setNewPreference('');
-      toast.success('Interview preference added');
+  const handleRemoveSkill = async (interviewerTechId) => {
+    try {
+      await profileAPI.removeInterviewerTechnology(interviewerTechId);
+      setInterviewerTechs(interviewerTechs.filter(it => it.id !== interviewerTechId));
+      toast.success('Skill removed');
+    } catch (error) {
+      console.error('Error removing skill:', error);
+      toast.error('Failed to remove skill');
     }
   };
 
-  const handleRemovePreference = (pref) => {
-    setProfile({ ...profile, willingToInterview: profile.willingToInterview.filter(p => p !== pref) });
-    toast.success('Interview preference removed');
+  const handleShowAllSkills = () => {
+    if (showSkillDropdown) {
+      // If already showing, close it
+      setShowSkillDropdown(false);
+    } else {
+      // Show all available skills
+      setFilteredTechnologies(
+        technologies.filter(tech => 
+          !interviewerTechs.some(it => it.technology.id === tech.id)
+        )
+      );
+      setShowSkillDropdown(true);
+    }
   };
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-96">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <Layout>
+        <div className="text-center text-muted-foreground">Failed to load profile</div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -94,9 +245,15 @@ const ProfilePage = () => {
           </div>
           <Button
             onClick={() => (isEditing ? handleSave() : setIsEditing(true))}
+            disabled={saving}
             className="gap-2"
           >
-            {isEditing ? (
+            {saving ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Saving...
+              </>
+            ) : isEditing ? (
               <>
                 <Save className="w-4 h-4" />
                 Save Changes
@@ -124,9 +281,11 @@ const ProfilePage = () => {
                   <h2 className="text-2xl font-bold text-foreground">
                     {profile.firstName} {profile.lastName}
                   </h2>
-                  <p className="text-muted-foreground">{profile.designation}</p>
+                  <p className="text-muted-foreground">
+                    {profile.currentDesignation?.name || 'No designation'}
+                  </p>
                   <Badge className="mt-2 bg-primary-light text-primary">
-                    {profile.employeeCode}
+                    {profile.email}
                   </Badge>
                 </div>
 
@@ -137,16 +296,18 @@ const ProfilePage = () => {
                   </div>
                   <div className="flex items-center gap-3 text-sm">
                     <Phone className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">{profile.phone}</span>
+                    <span className="text-muted-foreground">{profile.phone || 'Not set'}</span>
                   </div>
                   <div className="flex items-center gap-3 text-sm">
                     <Briefcase className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">{profile.department}</span>
+                    <span className="text-muted-foreground">
+                      {profile.department?.name || 'No department'}
+                    </span>
                   </div>
                   <div className="flex items-center gap-3 text-sm">
                     <Award className="w-4 h-4 text-muted-foreground" />
                     <span className="text-muted-foreground">
-                      {profile.yearsOfExperience} years experience
+                      {profile.yearsOfExperience || 0} years experience
                     </span>
                   </div>
                 </div>
@@ -168,7 +329,7 @@ const ProfilePage = () => {
                     <Label htmlFor="firstName">First Name</Label>
                     <Input
                       id="firstName"
-                      value={profile.firstName}
+                      value={profile.firstName || ''}
                       onChange={(e) => handleChange('firstName', e.target.value)}
                       disabled={!isEditing}
                     />
@@ -177,7 +338,7 @@ const ProfilePage = () => {
                     <Label htmlFor="lastName">Last Name</Label>
                     <Input
                       id="lastName"
-                      value={profile.lastName}
+                      value={profile.lastName || ''}
                       onChange={(e) => handleChange('lastName', e.target.value)}
                       disabled={!isEditing}
                     />
@@ -199,7 +360,7 @@ const ProfilePage = () => {
                     <Label htmlFor="phone">Phone</Label>
                     <Input
                       id="phone"
-                      value={profile.phone}
+                      value={profile.phone || ''}
                       onChange={(e) => handleChange('phone', e.target.value)}
                       disabled={!isEditing}
                     />
@@ -210,10 +371,11 @@ const ProfilePage = () => {
                   <Label htmlFor="bio">Bio</Label>
                   <Textarea
                     id="bio"
-                    value={profile.bio}
+                    value={profile.bio || ''}
                     onChange={(e) => handleChange('bio', e.target.value)}
                     disabled={!isEditing}
                     rows={4}
+                    placeholder="Tell us about yourself..."
                   />
                 </div>
               </CardContent>
@@ -228,120 +390,302 @@ const ProfilePage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Department</Label>
-                    <Input value={profile.department} disabled className="bg-muted" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Designation</Label>
                     {isEditing ? (
                       <Select
-                        value={profile.designation}
-                        onValueChange={(value) => handleChange('designation', value)}
+                        value={profile.department?.id?.toString()}
+                        onValueChange={(value) =>
+                          handleChange('department', departments.find(d => d.id === parseInt(value)))
+                        }
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select designation" />
+                          <SelectValue placeholder="Select department" />
                         </SelectTrigger>
                         <SelectContent>
-                          {designationOptions.map((designation) => (
-                            <SelectItem key={designation} value={designation}>
-                              {designation}
+                          {departments.map((dept) => (
+                            <SelectItem key={dept.id} value={dept.id.toString()}>
+                              {dept.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     ) : (
-                      <Input value={profile.designation} disabled className="bg-muted" />
+                      <Input
+                        value={profile.department?.name || 'Not set'}
+                        disabled
+                        className="bg-muted"
+                      />
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Designation</Label>
+                    {isEditing ? (
+                      <Select
+                        value={profile.currentDesignation?.id?.toString()}
+                        onValueChange={(value) =>
+                          handleChange(
+                            'currentDesignation',
+                            designations.find(d => d.id === parseInt(value))
+                          )
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select designation" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {designations.map((des) => (
+                            <SelectItem key={des.id} value={des.id.toString()}>
+                              {des.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input
+                        value={profile.currentDesignation?.name || 'Not set'}
+                        disabled
+                        className="bg-muted"
+                      />
                     )}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Employee Code</Label>
-                    <Input value={profile.employeeCode} disabled className="bg-muted" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Years of Experience</Label>
-                    <Input
-                      type="number"
-                      value={profile.yearsOfExperience}
-                      onChange={(e) => handleChange('yearsOfExperience', parseInt(e.target.value) || 0)}
-                      disabled={!isEditing}
-                      min={0}
-                      max={50}
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label>Years of Experience</Label>
+                  <Input
+                    type="number"
+                    value={profile.yearsOfExperience || 0}
+                    onChange={(e) =>
+                      handleChange('yearsOfExperience', parseInt(e.target.value) || 0)
+                    }
+                    disabled={!isEditing}
+                    min={0}
+                    max={50}
+                  />
                 </div>
               </CardContent>
             </Card>
 
             <Card className="shadow-elegant">
               <CardHeader>
-                <CardTitle>Technical Skills</CardTitle>
-                <CardDescription>Technologies you're proficient in</CardDescription>
+                <CardTitle>Technical Skills & Interview Preferences</CardTitle>
+                <CardDescription>
+                  Technologies you're proficient in and willing to conduct interviews for
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Add a new skill..."
-                    value={newSkill}
-                    onChange={(e) => setNewSkill(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleAddSkill()}
-                  />
-                  <Button onClick={handleAddSkill} size="sm" className="shrink-0">
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {profile.technologies.map((tech) => (
-                    <Badge key={tech} variant="outline" className="text-sm gap-1 pr-1">
-                      {tech}
-                      <button
-                        onClick={() => handleRemoveSkill(tech)}
-                        className="ml-1 hover:text-destructive rounded-full hover:bg-destructive/10 p-0.5"
+                {isEditing && (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Input
+                          placeholder="Type to search or add new skill..."
+                          value={newSkill}
+                          onChange={(e) => setNewSkill(e.target.value)}
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleAddSkill();
+                            }
+                          }}
+                          onFocus={() => {
+                            if (newSkill.trim()) {
+                              setShowSkillDropdown(filteredTechnologies.length > 0);
+                            }
+                          }}
+                          onBlur={() => {
+                            // Delay to allow click on dropdown items
+                            setTimeout(() => setShowSkillDropdown(false), 200);
+                          }}
+                          className="pr-10"
+                        />
+                        <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
+                        
+                        <AnimatePresence>
+                          {showSkillDropdown && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -10 }}
+                              className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-auto"
+                            >
+                              {filteredTechnologies.length > 0 ? (
+                                <div className="py-1">
+                                  {filteredTechnologies.slice(0, 10).map((tech) => (
+                                    <button
+                                      key={tech.id}
+                                      onClick={() => handleSelectFromDropdown(tech)}
+                                      className="w-full px-4 py-2 text-left hover:bg-accent flex items-center justify-between group"
+                                    >
+                                      <span className="font-medium">{tech.name}</span>
+                                      <span className="text-xs text-muted-foreground">
+                                        {tech.category}
+                                      </span>
+                                    </button>
+                                  ))}
+                                  {filteredTechnologies.length > 10 && (
+                                    <div className="px-4 py-2 text-xs text-muted-foreground border-t">
+                                      +{filteredTechnologies.length - 10} more...
+                                    </div>
+                                  )}
+                                </div>
+                              ) : newSkill.trim() && (
+                                <div className="px-4 py-3 text-sm text-muted-foreground">
+                                  No matching skills found. Press Enter to create "{newSkill}"
+                                </div>
+                              )}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                      <Button 
+                        onClick={handleAddSkill} 
+                        size="sm" 
+                        className="shrink-0"
+                        disabled={!newSkill.trim()}
                       >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        onClick={handleShowAllSkills}
+                        size="sm" 
+                        variant="outline"
+                        className="shrink-0"
+                        title="Browse all skills"
+                      >
+                        <ChevronDown className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    
+                    <p className="text-xs text-muted-foreground">
+                      Start typing to search, or click the dropdown icon to browse all available skills
+                    </p>
+                  </div>
+                )}
 
-            <Card className="shadow-elegant">
-              <CardHeader>
-                <CardTitle>Interview Preferences</CardTitle>
-                <CardDescription>Technologies you're willing to conduct interviews for</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Add interview preference..."
-                    value={newPreference}
-                    onChange={(e) => setNewPreference(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleAddPreference()}
-                  />
-                  <Button onClick={handleAddPreference} size="sm" className="shrink-0">
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                </div>
                 <div className="flex flex-wrap gap-2">
-                  {profile.willingToInterview.map((tech) => (
-                    <Badge key={tech} className="bg-success-light text-success text-sm gap-1 pr-1">
-                      {tech}
-                      <button
-                        onClick={() => handleRemovePreference(tech)}
-                        className="ml-1 hover:text-destructive rounded-full hover:bg-destructive/10 p-0.5"
+                  {interviewerTechs.map((it) => (
+                    <motion.div
+                      key={it.id}
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.8, opacity: 0 }}
+                    >
+                      <Badge
+                        variant="outline"
+                        className="text-sm gap-1 pr-1 bg-success-light text-success border-success/20"
                       >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </Badge>
+                        <span>{it.technology.name}</span>
+                        {it.technology.category && (
+                          <span className="text-xs opacity-70">({it.technology.category})</span>
+                        )}
+                        {isEditing && (
+                          <button
+                            onClick={() => handleRemoveSkill(it.id)}
+                            className="ml-1 hover:text-destructive rounded-full hover:bg-destructive/10 p-0.5 transition-colors"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
+                      </Badge>
+                    </motion.div>
                   ))}
+                  {interviewerTechs.length === 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      {isEditing 
+                        ? "No skills added yet. Start typing above to add your first skill."
+                        : "No skills added yet. Click 'Edit Profile' to add skills."}
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
           </div>
         </div>
       </div>
+
+      {/* New Skill Modal */}
+      <AnimatePresence>
+        {showNewSkillModal && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 z-40"
+              onClick={() => {
+                setShowNewSkillModal(false);
+                setNewSkill('');
+                setNewSkillCategory('Other');
+              }}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md"
+            >
+              <Card className="shadow-2xl">
+                <CardHeader>
+                  <CardTitle>Create New Skill</CardTitle>
+                  <CardDescription>
+                    "{newSkill}" doesn't exist yet. Let's create it!
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="skillName">Skill Name</Label>
+                    <Input
+                      id="skillName"
+                      value={newSkill}
+                      onChange={(e) => setNewSkill(e.target.value)}
+                      placeholder="e.g., React Native"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="skillCategory">Category</Label>
+                    <Select
+                      value={newSkillCategory}
+                      onValueChange={setNewSkillCategory}
+                    >
+                      <SelectTrigger id="skillCategory">
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SKILL_CATEGORIES.map((category) => (
+                          <SelectItem key={category} value={category}>
+                            {category}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex gap-2 pt-4">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => {
+                        setShowNewSkillModal(false);
+                        setNewSkill('');
+                        setNewSkillCategory('Other');
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      className="flex-1"
+                      onClick={handleCreateAndAddSkill}
+                    >
+                      Create & Add
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </Layout>
   );
 };

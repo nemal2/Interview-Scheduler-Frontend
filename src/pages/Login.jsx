@@ -17,27 +17,28 @@ const Login = () => {
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+  e.preventDefault();
+  setError('');
+  setLoading(true);
 
-    try {
-      const user = await login(email, password);
-      
-      // Navigate based on role
-      if (user.role === 'ADMIN') {
-        navigate('/admin/dashboard');
-      } else if (user.role === 'HR') {
-        navigate('/hr/dashboard');
-      } else if (user.role === 'INTERVIEWER') {
-        navigate('/interviewer/dashboard');
-      }
-    } catch (err) {
-      setError('Invalid credentials. Please try again.');
-    } finally {
-      setLoading(false);
+  try {
+    const user = await login(email, password);
+    
+    // Navigate based on role
+    if (user.role === 'ADMIN') {
+      navigate('/admin/dashboard');
+    } else if (user.role === 'HR') {
+      navigate('/hr/dashboard');
+    } else if (user.role === 'INTERVIEWER') {
+      navigate('/interviewer/dashboard');
     }
-  };
+  } catch (err) {
+    setError(err.message || 'Invalid credentials. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const demoAccounts = [
     { email: 'admin@mitra.com', role: 'Admin', color: 'primary' },
