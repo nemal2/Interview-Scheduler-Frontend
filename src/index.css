@@ -69,6 +69,20 @@ All colors MUST be HSL.
     --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
+  /* Force Dialog to appear on top */
+[data-radix-portal] {
+  z-index: 9999 !important;
+}
+
+.dialog-overlay {
+  z-index: 9998 !important;
+}
+
+/* Ensure dialog content is visible */
+[role="dialog"] {
+  z-index: 9999 !important;
+  pointer-events: auto !important;
+}
 
   .dark {
     --background: 215 25% 12%;
@@ -447,4 +461,44 @@ All colors MUST be HSL.
 
 .rbc-agenda-event-cell {
   padding: 12px 16px;
+}
+
+
+
+[data-radix-popper-content-wrapper] {
+  z-index: 99999 !important;
+}
+
+[role="dialog"] {
+  z-index: 99999 !important;
+  position: fixed !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+/* Dialog overlay */
+[data-radix-dialog-overlay] {
+  z-index: 99998 !important;
+  position: fixed !important;
+  inset: 0 !important;
+}
+
+/* Ensure portals are on top */
+body > div[data-radix-portal] {
+  z-index: 99997 !important;
+}
+
+/* Fix Select dropdowns in dialogs */
+[data-radix-select-content] {
+  z-index: 100000 !important;
+}
+
+/* Framer motion modals (for ProfilePage) */
+.fixed.inset-0.bg-black\/50 {
+  z-index: 99998 !important;
+}
+
+.fixed.left-1\/2.top-1\/2 {
+  z-index: 99999 !important;
 }

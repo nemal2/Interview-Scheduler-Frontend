@@ -39,6 +39,12 @@ export const profileAPI = {
     await api.delete(`/profile/interviewer-technologies/${id}`);
   },
 
+  // Create new technology (if it doesn't exist)
+  createTechnology: async (name, category = 'General') => {
+    const response = await api.post('/technologies', { name, category });
+    return response.data;
+  },
+
   // Get all departments
   getDepartments: async () => {
     const response = await api.get('/departments');
@@ -48,12 +54,6 @@ export const profileAPI = {
   // Get all designations
   getDesignations: async () => {
     const response = await api.get('/designations');
-    return response.data;
-  },
-
-  // Create new technology (if it doesn't exist)
-  createTechnology: async (name, category = 'General') => {
-    const response = await api.post('/technologies', { name, category });
     return response.data;
   }
 };

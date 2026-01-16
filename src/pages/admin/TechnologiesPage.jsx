@@ -1,50 +1,106 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Edit, Trash2, Code2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Code2, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from '@/hooks/use-toast';
-
-const mockTechnologies = [
-  { id: 1, name: 'Java', category: 'LANGUAGE', isActive: true },
-  { id: 2, name: 'React', category: 'FRAMEWORK', isActive: true },
-  { id: 3, name: 'Python', category: 'LANGUAGE', isActive: true },
-  { id: 4, name: '.NET', category: 'FRAMEWORK', isActive: true },
-  { id: 5, name: 'PostgreSQL', category: 'DATABASE', isActive: true },
-  { id: 6, name: 'AWS', category: 'CLOUD', isActive: true },
-  { id: 7, name: 'Docker', category: 'DEVOPS', isActive: true },
-  { id: 8, name: 'Angular', category: 'FRAMEWORK', isActive: true },
-];
+import { technologyAPI } from '@/services/technologyAPI';
 
 const TechnologiesPage = () => {
-  const [technologies, setTechnologies] = useState(mockTechnologies);
+  const [technologies, setTechnologies] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [filterCategory, setFilterCategory] = useState('ALL');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingTechnology, setEditingTechnology] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isMutating, setIsMutating] = useState(false);
   
-  // Form state
-  const [techName, setTechName] = useState('');
-  const [category, setCategory] = useState('');
-  const [description, setDescription] = useState('');
+  const [formData, setFormData] = useState({
+    name: '',
+    category: '',
+    newCategory: ''
+  });
 
-  const filteredTechnologies = technologies.filter(tech => 
-    filterCategory === 'ALL' || tech.category === filterCategory
-  );
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    if (filterCategory === 'ALL') {
+      loadData();
+    } else {
+      filterTechnologies();
+    }
+  }, [filterCategory]);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [techData, catData] = await Promise.all([
+        technologyAPI.getAllTechnologies(),
+        technologyAPI.getAllCategories()
+      ]);
+      setTechnologies(techData || []);
+      setCategories(catData || []);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load technologies",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filterTechnologies = async () => {
+    try {
+      setLoading(true);
+      const data = await technologyAPI.getTechnologiesByCategory(filterCategory);
+      setTechnologies(data || []);
+    } catch (error) {
+      console.error('Error filtering:', error);
+      toast({
+        title: "Error",
+        description: "Failed to filter technologies",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const refreshTechnologies = async () => {
+    if (filterCategory === 'ALL') {
+      await loadData();
+    } else {
+      await filterTechnologies();
+    }
+  };
 
   const getCategoryColor = (category) => {
     const colors = {
-      LANGUAGE: 'bg-primary-light text-primary',
-      FRAMEWORK: 'bg-success-light text-success',
-      DATABASE: 'bg-secondary-light text-secondary',
-      CLOUD: 'bg-warning-light text-warning',
-      DEVOPS: 'bg-accent text-accent-foreground',
+      'Programming Language': 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200',
+      'Framework': 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200',
+      'Database': 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-200',
+      'Cloud Platform': 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-200',
+      'DevOps': 'bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-200',
+      'Runtime': 'bg-teal-100 text-teal-700 dark:bg-teal-900 dark:text-teal-200',
+      'Architecture': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-200',
+      'Cache': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-200',
+      'Concept': 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900 dark:text-cyan-200',
     };
-    return colors[category] || 'bg-muted text-muted-foreground';
+    return colors[category] || 'bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-200';
   };
 
   const groupByCategory = (techs) => {
@@ -55,47 +111,162 @@ const TechnologiesPage = () => {
     }, {});
   };
 
-  const handleAddTechnology = () => {
-    if (!techName || !category) {
+  const resetForm = () => {
+    setFormData({ name: '', category: '', newCategory: '' });
+    setIsCustomCategory(false);
+  };
+
+  const handleOpenAddDialog = () => {
+    resetForm();
+    setTimeout(() => setIsAddDialogOpen(true), 0);
+  };
+
+  const handleCloseAddDialog = () => {
+    setIsAddDialogOpen(false);
+    resetForm();
+  };
+
+  const handleAddTechnology = async () => {
+    const finalCategory = isCustomCategory ? formData.newCategory : formData.category;
+
+    if (!formData.name?.trim() || !finalCategory?.trim()) {
       toast({
-        title: "Missing Information",
+        title: "Validation Error",
         description: "Please fill in technology name and category",
         variant: "destructive"
       });
       return;
     }
 
-    const newTech = {
-      id: technologies.length + 1,
-      name: techName,
-      category: category,
-      description: description,
-      isActive: true
+    const payload = {
+      name: formData.name.trim(),
+      category: finalCategory.trim()
     };
 
-    setTechnologies([...technologies, newTech]);
-    
-    // Reset form
-    setTechName('');
-    setCategory('');
-    setDescription('');
-    setIsAddDialogOpen(false);
+    setIsMutating(true);
 
-    toast({
-      title: "Technology Added",
-      description: `${techName} has been successfully added`,
-    });
+    try {
+      await technologyAPI.createTechnology(payload);
+      await refreshTechnologies();
+      handleCloseAddDialog();
+      
+      toast({
+        title: "Success",
+        description: `${formData.name} has been successfully added`
+      });
+    } catch (err) {
+      console.error('Error creating technology:', err);
+      const errorMessage = err.response?.data?.message || err.message || "Failed to create technology";
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    } finally {
+      setIsMutating(false);
+    }
   };
 
-  const handleDeleteTechnology = (id) => {
-    setTechnologies(technologies.filter(tech => tech.id !== id));
-    toast({
-      title: "Technology Deleted",
-      description: "The technology has been removed",
+  const handleOpenEditDialog = (tech) => {
+    setEditingTechnology(tech);
+    setFormData({
+      name: tech.name || '',
+      category: tech.category || '',
+      newCategory: ''
     });
+    setIsCustomCategory(false);
+    setTimeout(() => setIsEditDialogOpen(true), 0);
   };
+
+  const handleCloseEditDialog = () => {
+    setIsEditDialogOpen(false);
+    setEditingTechnology(null);
+    resetForm();
+  };
+
+  const handleEditTechnology = async () => {
+    const finalCategory = isCustomCategory ? formData.newCategory : formData.category;
+
+    if (!formData.name?.trim() || !finalCategory?.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in technology name and category",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const payload = {
+      name: formData.name.trim(),
+      category: finalCategory.trim()
+    };
+
+    setIsMutating(true);
+
+    try {
+      await technologyAPI.updateTechnology(editingTechnology.id, payload);
+      await refreshTechnologies();
+      handleCloseEditDialog();
+      
+      toast({
+        title: "Success",
+        description: "Technology updated successfully"
+      });
+    } catch (err) {
+      console.error('Error updating technology:', err);
+      const errorMessage = err.response?.data?.message || err.message || "Failed to update technology";
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
+  const handleDeleteTechnology = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to delete ${name}?`)) return;
+
+    setIsMutating(true);
+
+    try {
+      await technologyAPI.deleteTechnology(id);
+      await refreshTechnologies();
+      
+      toast({
+        title: "Success",
+        description: "Technology deleted successfully"
+      });
+    } catch (err) {
+      console.error('Error deleting technology:', err);
+      const errorMessage = err.response?.data?.message || err.message || "Failed to delete technology";
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
+  const filteredTechnologies = technologies.filter(tech => 
+    filterCategory === 'ALL' || tech.category === filterCategory
+  );
 
   const grouped = groupByCategory(filteredTechnologies);
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-3 text-muted-foreground">Loading...</span>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
@@ -105,128 +276,253 @@ const TechnologiesPage = () => {
             <h1 className="text-3xl font-bold text-foreground">Technologies</h1>
             <p className="text-muted-foreground">Manage technology stack and skills</p>
           </div>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2">
-                <Plus className="w-4 h-4" />
-                Add Technology
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New Technology</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label>Technology Name *</Label>
-                  <Input 
-                    value={techName}
-                    onChange={(e) => setTechName(e.target.value)}
-                    placeholder="e.g., React, Java, AWS" 
-                  />
-                </div>
-                <div>
-                  <Label>Category *</Label>
-                  <Select value={category} onValueChange={setCategory}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="LANGUAGE">Language</SelectItem>
-                      <SelectItem value="FRAMEWORK">Framework</SelectItem>
-                      <SelectItem value="DATABASE">Database</SelectItem>
-                      <SelectItem value="CLOUD">Cloud</SelectItem>
-                      <SelectItem value="DEVOPS">DevOps</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Description (Optional)</Label>
-                  <Input 
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Brief description" 
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
-                <Button type="button" onClick={handleAddTechnology}>Add Technology</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <Button onClick={handleOpenAddDialog} disabled={isMutating}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Technology
+          </Button>
         </div>
 
+        {/* Add Dialog */}
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Add New Technology</DialogTitle>
+              <DialogDescription>
+                Add a new technology to your stack. All fields are required.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="add-name">Technology Name *</Label>
+                <Input 
+                  id="add-name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  placeholder="e.g., React, Java, AWS" 
+                  disabled={isMutating}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="add-category">Category *</Label>
+                <Select 
+                  value={isCustomCategory ? 'custom' : formData.category} 
+                  onValueChange={(v) => {
+                    if (v === 'custom') {
+                      setIsCustomCategory(true);
+                      setFormData({...formData, category: ''});
+                    } else {
+                      setIsCustomCategory(false);
+                      setFormData({...formData, category: v, newCategory: ''});
+                    }
+                  }}
+                  disabled={isMutating}
+                >
+                  <SelectTrigger id="add-category">
+                    <SelectValue placeholder="Select or create category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map(cat => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                    <SelectItem value="custom">+ Add New Category</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {isCustomCategory && (
+                <div className="space-y-2">
+                  <Label htmlFor="new-category">New Category Name *</Label>
+                  <Input 
+                    id="new-category"
+                    value={formData.newCategory}
+                    onChange={(e) => setFormData({...formData, newCategory: e.target.value})}
+                    placeholder="e.g., Machine Learning, Mobile Development" 
+                    disabled={isMutating}
+                  />
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button 
+                type="button"
+                variant="outline" 
+                onClick={handleCloseAddDialog} 
+                disabled={isMutating}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="button"
+                onClick={handleAddTechnology} 
+                disabled={isMutating}
+              >
+                {isMutating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isMutating ? 'Adding...' : 'Add Technology'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Edit Technology</DialogTitle>
+              <DialogDescription>
+                Update technology details.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Technology Name *</Label>
+                <Input 
+                  id="edit-name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  disabled={isMutating}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-category">Category *</Label>
+                <Select 
+                  value={isCustomCategory ? 'custom' : formData.category} 
+                  onValueChange={(v) => {
+                    if (v === 'custom') {
+                      setIsCustomCategory(true);
+                      setFormData({...formData, category: ''});
+                    } else {
+                      setIsCustomCategory(false);
+                      setFormData({...formData, category: v, newCategory: ''});
+                    }
+                  }}
+                  disabled={isMutating}
+                >
+                  <SelectTrigger id="edit-category">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map(cat => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                    <SelectItem value="custom">+ Add New Category</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {isCustomCategory && (
+                <div className="space-y-2">
+                  <Label htmlFor="edit-new-category">New Category Name *</Label>
+                  <Input 
+                    id="edit-new-category"
+                    value={formData.newCategory}
+                    onChange={(e) => setFormData({...formData, newCategory: e.target.value})}
+                    placeholder="Enter new category name" 
+                    disabled={isMutating}
+                  />
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button 
+                type="button"
+                variant="outline" 
+                onClick={handleCloseEditDialog} 
+                disabled={isMutating}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="button"
+                onClick={handleEditTechnology} 
+                disabled={isMutating}
+              >
+                {isMutating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isMutating ? 'Updating...' : 'Update'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Filter */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Technology Stack ({technologies.length})</CardTitle>
               <Select value={filterCategory} onValueChange={setFilterCategory}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-64">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ALL">All Categories</SelectItem>
-                  <SelectItem value="LANGUAGE">Languages</SelectItem>
-                  <SelectItem value="FRAMEWORK">Frameworks</SelectItem>
-                  <SelectItem value="DATABASE">Databases</SelectItem>
-                  <SelectItem value="CLOUD">Cloud</SelectItem>
-                  <SelectItem value="DEVOPS">DevOps</SelectItem>
+                  {categories.map(cat => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-6">
-              {Object.entries(grouped).map(([category, techs], catIndex) => (
-                <motion.div
-                  key={category}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: catIndex * 0.1 }}
-                >
-                  <div className="space-y-3">
-                    <h3 className="font-semibold flex items-center gap-2">
-                      <Code2 className="w-4 h-4" />
-                      {category} ({techs.length})
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {techs.map((tech, index) => (
-                        <Card key={tech.id} className="hover:shadow-md transition-shadow">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                                  <Code2 className="w-5 h-5 text-primary" />
+            {Object.keys(grouped).length === 0 ? (
+              <div className="py-12 text-center">
+                <Code2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-muted-foreground">No technologies found</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {Object.entries(grouped).map(([category, techs], catIndex) => (
+                  <motion.div
+                    key={category}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: catIndex * 0.1 }}
+                  >
+                    <div className="space-y-3">
+                      <h3 className="font-semibold flex items-center gap-2">
+                        <Code2 className="w-4 h-4" />
+                        {category} ({techs.length})
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {techs.map((tech) => (
+                          <Card key={tech.id} className="hover:shadow-md transition-shadow">
+                            <CardContent className="p-4">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                                    <Code2 className="w-5 h-5 text-primary" />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <h4 className="font-medium truncate">{tech.name}</h4>
+                                    <Badge className={`${getCategoryColor(tech.category)} text-xs`}>
+                                      {tech.category}
+                                    </Badge>
+                                  </div>
                                 </div>
-                                <div>
-                                  <h4 className="font-medium">{tech.name}</h4>
-                                  <Badge className={getCategoryColor(tech.category)} size="sm">
-                                    {tech.category}
-                                  </Badge>
+                                <div className="flex gap-1 shrink-0">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => handleOpenEditDialog(tech)}
+                                    disabled={isMutating}
+                                  >
+                                    <Edit className="w-3 h-3" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => handleDeleteTechnology(tech.id, tech.name)}
+                                    disabled={isMutating}
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
                                 </div>
                               </div>
-                              <div className="flex gap-1">
-                                <Button variant="ghost" size="sm">
-                                  <Edit className="w-3 h-3" />
-                                </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => handleDeleteTechnology(tech.id)}
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </Button>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
