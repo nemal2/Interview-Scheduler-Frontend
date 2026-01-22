@@ -19,6 +19,12 @@ export const designationAPI = {
     return response.data;
   },
 
+  // Get designations by tier
+  getDesignationsByTier: async (tierId) => {
+    const response = await api.get(`/designations/tier/${tierId}`);
+    return response.data;
+  },
+
   // Create new designation
   createDesignation: async (designationData) => {
     const response = await api.post('/designations', designationData);
