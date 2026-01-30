@@ -1,255 +1,646 @@
-/* AvailabilityCalendar.css - Place this in your src/styles folder */
+/* AvailabilityCalendar.css - Enhanced & Elegant Calendar Styles */
 
-/* Calendar Container */
+/* ============================================
+   CALENDAR CONTAINER & BASE STYLES
+   ============================================ */
+.availability-calendar-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.availability-calendar-container * {
+  box-sizing: border-box;
+}
+
 .availability-calendar-container .rbc-calendar {
   font-family: inherit;
   background: transparent;
+  height: 100%;
 }
 
-/* Header Styling */
-.availability-calendar-container .rbc-header {
-  padding: 14px 6px;
-  font-weight: 600;
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-bottom: 2px solid hsl(var(--border));
-  background: hsl(var(--muted) / 0.5);
-}
-
-/* Month View */
-.availability-calendar-container .rbc-month-view {
-  border: 1px solid hsl(var(--border));
-  border-radius: 12px;
-  overflow: hidden;
-  height: calc(100% - 60px);
-}
-
-.availability-calendar-container .rbc-month-row {
-  min-height: 100px !important;
-  border-color: hsl(var(--border));
-  overflow: visible !important;
-}
-
-.availability-calendar-container .rbc-row-content {
-  min-height: 100px !important;
-}
-
-.availability-calendar-container .rbc-day-bg {
-  border-color: hsl(var(--border));
-  transition: background-color 0.2s;
-}
-
-.availability-calendar-container .rbc-day-bg:hover {
-  background-color: hsl(var(--accent) / 0.5);
-  cursor: pointer;
-}
-
-.availability-calendar-container .rbc-today {
-  background-color: hsl(var(--accent));
-}
-
-.availability-calendar-container .rbc-off-range-bg {
-  background-color: hsl(var(--muted) / 0.3);
-}
-
-/* Date Cell */
-.availability-calendar-container .rbc-date-cell {
-  padding: 8px 10px;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.availability-calendar-container .rbc-now .rbc-button-link {
-  color: hsl(var(--primary));
-  font-weight: 700;
-}
-
-/* Event Styling */
-.availability-calendar-container .rbc-event {
-  padding: 4px 8px;
-  font-size: 12px;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.availability-calendar-container .rbc-event:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-}
-
-.availability-calendar-container .rbc-event-label {
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.availability-calendar-container .rbc-event-content {
-  font-size: 12px;
-}
-
-/* Week and Day View */
-.availability-calendar-container .rbc-time-slot {
-  min-height: 50px;
-  border-top: 1px solid hsl(var(--border) / 0.3);
-}
-
-.availability-calendar-container .rbc-time-content {
-  border-top: 2px solid hsl(var(--border));
-}
-
-.availability-calendar-container .rbc-current-time-indicator {
-  background-color: hsl(var(--primary));
-  height: 2px;
-}
-
-.availability-calendar-container .rbc-timeslot-group {
-  min-height: 60px;
-  border-left: 1px solid hsl(var(--border));
-}
-
-.availability-calendar-container .rbc-time-header-content {
-  border-left: 1px solid hsl(var(--border));
-}
-
-.availability-calendar-container .rbc-time-header-gutter {
-  background: hsl(var(--muted) / 0.3);
-}
-
-.availability-calendar-container .rbc-time-gutter {
-  background: hsl(var(--muted) / 0.2);
-}
-
-.availability-calendar-container .rbc-label {
-  padding: 8px 12px;
-  font-size: 12px;
-  font-weight: 500;
-  color: hsl(var(--muted-foreground));
-}
-
-/* Toolbar */
+/* ============================================
+   TOOLBAR STYLING
+   ============================================ */
 .availability-calendar-container .rbc-toolbar {
-  padding: 14px 20px;
-  margin-bottom: 20px;
-  background: hsl(var(--muted) / 0.4);
-  border-radius: 10px;
+  padding: 16px 24px;
+  margin-bottom: 24px;
+  background: linear-gradient(135deg, hsl(var(--muted) / 0.3) 0%, hsl(var(--muted) / 0.5) 100%);
+  border-radius: 12px;
   border: 1px solid hsl(var(--border));
   display: flex;
   align-items: center;
   gap: 16px;
+  flex-wrap: wrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .availability-calendar-container .rbc-toolbar-label {
-  flex-grow: 1;
+  flex: 1 1 auto;
   text-align: center;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   color: hsl(var(--foreground));
+  letter-spacing: -0.02em;
+  min-width: 200px;
+}
+
+.availability-calendar-container .rbc-btn-group {
+  display: flex;
+  gap: 8px;
 }
 
 .availability-calendar-container .rbc-toolbar button {
   color: hsl(var(--foreground));
   border: 1px solid hsl(var(--border));
   background: white;
-  padding: 8px 16px;
+  padding: 10px 18px;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .availability-calendar-container .rbc-toolbar button:hover {
   background: hsl(var(--accent));
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .availability-calendar-container .rbc-toolbar button:active {
   transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .availability-calendar-container .rbc-toolbar button.rbc-active {
   background: hsl(var(--primary));
   color: white;
   border-color: hsl(var(--primary));
-  box-shadow: 0 2px 6px hsla(var(--primary) / 0.3);
+  box-shadow: 0 4px 12px hsla(var(--primary) / 0.4);
 }
 
-/* Show More Link */
+/* ============================================
+   HEADER STYLING (Days of Week)
+   ============================================ */
+.availability-calendar-container .rbc-header {
+  padding: 16px 8px;
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 2px solid hsl(var(--border));
+  background: linear-gradient(180deg, hsl(var(--muted) / 0.4) 0%, hsl(var(--muted) / 0.6) 100%);
+  color: hsl(var(--muted-foreground));
+  text-align: center;
+}
+
+.availability-calendar-container .rbc-header + .rbc-header {
+  border-left: 1px solid hsl(var(--border));
+}
+
+/* ============================================
+   MONTH VIEW STYLES
+   ============================================ */
+.availability-calendar-container .rbc-month-view {
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+  overflow: visible;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.availability-calendar-container .rbc-month-header {
+  flex: none;
+}
+
+.availability-calendar-container .rbc-month-row {
+  flex: 1;
+  min-height: 0 !important;
+  border-color: hsl(var(--border));
+  overflow: visible !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.availability-calendar-container .rbc-row-bg {
+  display: flex;
+  flex: 1;
+  overflow: visible;
+}
+
+.availability-calendar-container .rbc-row-content {
+  flex: 1;
+  min-height: 0 !important;
+  position: relative;
+  overflow: visible;
+}
+
+.availability-calendar-container .rbc-day-bg {
+  border-color: hsl(var(--border));
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.availability-calendar-container .rbc-day-bg:hover {
+  background-color: hsl(var(--accent) / 0.4);
+  cursor: pointer;
+}
+
+.availability-calendar-container .rbc-today {
+  background-color: hsl(var(--primary) / 0.08);
+}
+
+.availability-calendar-container .rbc-off-range-bg {
+  background-color: hsl(var(--muted) / 0.2);
+}
+
+.availability-calendar-container .rbc-date-cell {
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+}
+
+.availability-calendar-container .rbc-now .rbc-button-link {
+  color: hsl(var(--primary));
+  font-weight: 700;
+  background: hsl(var(--primary) / 0.1);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ============================================
+   WEEK & DAY VIEW STYLES - PROPER ALIGNMENT
+   ============================================ */
+.availability-calendar-container .rbc-time-view {
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+  overflow: hidden;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Time Header - Contains the day headers */
+.availability-calendar-container .rbc-time-header {
+  display: flex;
+  flex-direction: row;
+  border-bottom: 2px solid hsl(var(--border));
+  overflow: visible;
+}
+
+/* Time gutter in header (empty corner) - FIXED WIDTH */
+.availability-calendar-container .rbc-time-header-gutter {
+  flex: none;
+  width: 85px;
+  min-width: 85px;
+  max-width: 85px;
+  background: linear-gradient(135deg, hsl(var(--muted) / 0.3) 0%, hsl(var(--muted) / 0.4) 100%);
+  border-right: 1px solid hsl(var(--border));
+}
+
+/* Container for day headers */
+.availability-calendar-container .rbc-time-header-content {
+  flex: 1;
+  display: flex;
+  min-width: 0;
+  border-left: none;
+}
+
+/* Individual day header cells - FLEXIBLE */
+.availability-calendar-container .rbc-row.rbc-time-header-cell {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 50px;
+}
+
+.availability-calendar-container .rbc-time-header-cell .rbc-header {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Time Content - Contains the scrollable time grid */
+.availability-calendar-container .rbc-time-content {
+  display: flex;
+  flex: 1;
+  border-top: none;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  min-height: 0;
+}
+
+/* Time gutter (time labels column) - FIXED WIDTH MATCHING HEADER */
+.availability-calendar-container .rbc-time-gutter {
+  flex: none;
+  width: 85px;
+  min-width: 85px;
+  max-width: 85px;
+  background: linear-gradient(135deg, hsl(var(--muted) / 0.2) 0%, hsl(var(--muted) / 0.3) 100%);
+  border-right: 1px solid hsl(var(--border));
+}
+
+/* Container for all day columns */
+.availability-calendar-container .rbc-day-slot {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  display: flex;
+}
+
+/* Individual time column for each day - FLEXIBLE */
+.availability-calendar-container .rbc-time-column {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Time slots styling */
+.availability-calendar-container .rbc-timeslot-group {
+  min-height: 65px;
+  border-left: 1px solid hsl(var(--border));
+  background: white;
+  transition: background-color 0.15s ease;
+}
+
+.availability-calendar-container .rbc-time-slot {
+  border-top: 1px solid hsl(var(--border) / 0.3);
+  transition: background-color 0.15s ease;
+}
+
+.availability-calendar-container .rbc-day-slot:hover .rbc-timeslot-group {
+  background-color: hsl(var(--accent) / 0.02);
+}
+
+/* Time labels */
+.availability-calendar-container .rbc-label {
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: hsl(var(--muted-foreground));
+  text-align: right;
+  letter-spacing: 0.3px;
+}
+
+/* Current time indicator */
+.availability-calendar-container .rbc-current-time-indicator {
+  background-color: hsl(var(--primary));
+  height: 3px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  pointer-events: none;
+  box-shadow: 0 0 8px hsla(var(--primary) / 0.5);
+}
+
+.availability-calendar-container .rbc-current-time-indicator::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: -5px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: hsl(var(--primary));
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* ============================================
+   EVENT STYLING
+   ============================================ */
+.availability-calendar-container .rbc-event {
+  padding: 6px 10px;
+  font-size: 13px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.availability-calendar-container .rbc-event::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.availability-calendar-container .rbc-event:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  z-index: 2;
+}
+
+.availability-calendar-container .rbc-event:active {
+  transform: translateY(0);
+}
+
+.availability-calendar-container .rbc-event-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.9;
+}
+
+.availability-calendar-container .rbc-event-content {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.availability-calendar-container .rbc-event.rbc-selected {
+  box-shadow: 0 0 0 3px hsla(var(--primary) / 0.3);
+}
+
+.availability-calendar-container .rbc-addons-dnd .rbc-event {
+  cursor: move;
+}
+
+/* ============================================
+   SELECTION & INTERACTION
+   ============================================ */
+.availability-calendar-container .rbc-selected-cell {
+  background-color: hsl(var(--primary) / 0.12);
+}
+
+.availability-calendar-container .rbc-selecting {
+  background-color: hsl(var(--primary) / 0.18);
+}
+
+.availability-calendar-container .rbc-slot-selecting {
+  cursor: crosshair;
+}
+
+/* Past time slots styling - disabled appearance */
+.availability-calendar-container .past-time-slot {
+  background-color: rgba(0, 0, 0, 0.02) !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  opacity: 0.4;
+}
+
+.availability-calendar-container .past-day {
+  background-color: rgba(0, 0, 0, 0.02) !important;
+  cursor: not-allowed !important;
+  opacity: 0.5;
+  position: relative;
+}
+
+.availability-calendar-container .past-day::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(0, 0, 0, 0.02) 10px,
+    rgba(0, 0, 0, 0.02) 20px
+  );
+  pointer-events: none;
+}
+
+.availability-calendar-container .past-day .rbc-date-cell {
+  color: hsl(var(--muted-foreground)) !important;
+  opacity: 0.5;
+}
+
+/* ============================================
+   SHOW MORE & OVERLAY
+   ============================================ */
 .availability-calendar-container .rbc-show-more {
   color: hsl(var(--primary));
   font-weight: 600;
   font-size: 12px;
   background: hsl(var(--primary) / 0.1);
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 6px 10px;
+  border-radius: 6px;
   margin-top: 4px;
   display: inline-block;
+  transition: all 0.2s ease;
+  border: 1px solid hsl(var(--primary) / 0.2);
 }
 
 .availability-calendar-container .rbc-show-more:hover {
   background: hsl(var(--primary) / 0.2);
+  transform: translateY(-1px);
 }
 
-/* Overlay/Popup */
 .availability-calendar-container .rbc-overlay {
   background: white;
   border: 1px solid hsl(var(--border));
   border-radius: 12px;
-  padding: 12px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-  z-index: 10;
+  padding: 16px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  backdrop-filter: blur(10px);
 }
 
 .availability-calendar-container .rbc-overlay-header {
-  padding: 8px 12px;
+  padding: 10px 14px;
   border-bottom: 2px solid hsl(var(--border));
   margin-bottom: 12px;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 15px;
+  color: hsl(var(--foreground));
 }
 
-/* Selection */
-.availability-calendar-container .rbc-selected-cell {
-  background-color: hsl(var(--primary) / 0.1);
-}
-
-.availability-calendar-container .rbc-selecting {
-  background-color: hsl(var(--primary) / 0.15);
-}
-
-/* Scrollbar Styling */
+/* ============================================
+   SCROLLBAR STYLING
+   ============================================ */
 .availability-calendar-container .rbc-time-content::-webkit-scrollbar {
-  width: 10px;
+  width: 12px;
 }
 
 .availability-calendar-container .rbc-time-content::-webkit-scrollbar-track {
-  background: hsl(var(--muted) / 0.3);
+  background: hsl(var(--muted) / 0.2);
   border-radius: 10px;
+  margin: 8px 0;
 }
 
 .availability-calendar-container .rbc-time-content::-webkit-scrollbar-thumb {
   background: hsl(var(--muted-foreground) / 0.3);
   border-radius: 10px;
+  border: 3px solid hsl(var(--muted) / 0.2);
+  transition: background 0.2s ease;
 }
 
 .availability-calendar-container .rbc-time-content::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.5);
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
+.availability-calendar-container .rbc-time-content {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.3) hsl(var(--muted) / 0.2);
+}
+
+/* ============================================
+   AGENDA VIEW
+   ============================================ */
+.availability-calendar-container .rbc-agenda-view {
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.availability-calendar-container .rbc-agenda-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.availability-calendar-container .rbc-agenda-date-cell,
+.availability-calendar-container .rbc-agenda-time-cell {
+  padding: 12px 16px;
+  font-weight: 600;
+  color: hsl(var(--muted-foreground));
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.availability-calendar-container .rbc-agenda-event-cell {
+  padding: 12px 16px;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+/* ============================================
+   RESPONSIVE ADJUSTMENTS
+   ============================================ */
+@media (max-width: 1024px) {
   .availability-calendar-container .rbc-toolbar {
     flex-direction: column;
     gap: 12px;
   }
   
   .availability-calendar-container .rbc-toolbar-label {
+    font-size: 18px;
+    order: -1;
+  }
+  
+  .availability-calendar-container .rbc-btn-group {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .availability-calendar-container .rbc-time-header-gutter,
+  .availability-calendar-container .rbc-time-gutter {
+    width: 75px;
+    min-width: 75px;
+    max-width: 75px;
+  }
+}
+
+@media (max-width: 768px) {
+  .availability-calendar-container .rbc-toolbar {
+    padding: 12px 16px;
+  }
+  
+  .availability-calendar-container .rbc-toolbar-label {
     font-size: 16px;
   }
   
-  .availability-calendar-container .rbc-month-row {
-    min-height: 80px !important;
+  .availability-calendar-container .rbc-toolbar button {
+    padding: 8px 14px;
+    font-size: 13px;
   }
+  
+  .availability-calendar-container .rbc-time-header-gutter,
+  .availability-calendar-container .rbc-time-gutter {
+    width: 65px;
+    min-width: 65px;
+    max-width: 65px;
+  }
+  
+  .availability-calendar-container .rbc-label {
+    font-size: 11px;
+    padding: 8px 8px;
+  }
+  
+  .availability-calendar-container .rbc-event {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .availability-calendar-container .rbc-toolbar button {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  
+  .availability-calendar-container .rbc-header {
+    font-size: 11px;
+    padding: 12px 4px;
+  }
+  
+  .availability-calendar-container .rbc-time-header-gutter,
+  .availability-calendar-container .rbc-time-gutter {
+    width: 55px;
+    min-width: 55px;
+    max-width: 55px;
+  }
+  
+  .availability-calendar-container .rbc-label {
+    font-size: 10px;
+    padding: 6px 4px;
+  }
+}
+
+/* ============================================
+   ANIMATION UTILITIES
+   ============================================ */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.availability-calendar-container .rbc-calendar {
+  animation: fadeIn 0.4s ease-out;
+}
+
+/* ============================================
+   ACCESSIBILITY IMPROVEMENTS
+   ============================================ */
+.availability-calendar-container .rbc-toolbar button:focus-visible,
+.availability-calendar-container .rbc-event:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
+
+.availability-calendar-container .rbc-show-more:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
+
+.availability-calendar-container .rbc-day-bg:focus {
+  background-color: hsl(var(--accent) / 0.3);
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: -2px;
 }
