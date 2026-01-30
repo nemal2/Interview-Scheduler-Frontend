@@ -1,0 +1,255 @@
+/* AvailabilityCalendar.css - Place this in your src/styles folder */
+
+/* Calendar Container */
+.availability-calendar-container .rbc-calendar {
+  font-family: inherit;
+  background: transparent;
+}
+
+/* Header Styling */
+.availability-calendar-container .rbc-header {
+  padding: 14px 6px;
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid hsl(var(--border));
+  background: hsl(var(--muted) / 0.5);
+}
+
+/* Month View */
+.availability-calendar-container .rbc-month-view {
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+  overflow: hidden;
+  height: calc(100% - 60px);
+}
+
+.availability-calendar-container .rbc-month-row {
+  min-height: 100px !important;
+  border-color: hsl(var(--border));
+  overflow: visible !important;
+}
+
+.availability-calendar-container .rbc-row-content {
+  min-height: 100px !important;
+}
+
+.availability-calendar-container .rbc-day-bg {
+  border-color: hsl(var(--border));
+  transition: background-color 0.2s;
+}
+
+.availability-calendar-container .rbc-day-bg:hover {
+  background-color: hsl(var(--accent) / 0.5);
+  cursor: pointer;
+}
+
+.availability-calendar-container .rbc-today {
+  background-color: hsl(var(--accent));
+}
+
+.availability-calendar-container .rbc-off-range-bg {
+  background-color: hsl(var(--muted) / 0.3);
+}
+
+/* Date Cell */
+.availability-calendar-container .rbc-date-cell {
+  padding: 8px 10px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.availability-calendar-container .rbc-now .rbc-button-link {
+  color: hsl(var(--primary));
+  font-weight: 700;
+}
+
+/* Event Styling */
+.availability-calendar-container .rbc-event {
+  padding: 4px 8px;
+  font-size: 12px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.availability-calendar-container .rbc-event:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.availability-calendar-container .rbc-event-label {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.availability-calendar-container .rbc-event-content {
+  font-size: 12px;
+}
+
+/* Week and Day View */
+.availability-calendar-container .rbc-time-slot {
+  min-height: 50px;
+  border-top: 1px solid hsl(var(--border) / 0.3);
+}
+
+.availability-calendar-container .rbc-time-content {
+  border-top: 2px solid hsl(var(--border));
+}
+
+.availability-calendar-container .rbc-current-time-indicator {
+  background-color: hsl(var(--primary));
+  height: 2px;
+}
+
+.availability-calendar-container .rbc-timeslot-group {
+  min-height: 60px;
+  border-left: 1px solid hsl(var(--border));
+}
+
+.availability-calendar-container .rbc-time-header-content {
+  border-left: 1px solid hsl(var(--border));
+}
+
+.availability-calendar-container .rbc-time-header-gutter {
+  background: hsl(var(--muted) / 0.3);
+}
+
+.availability-calendar-container .rbc-time-gutter {
+  background: hsl(var(--muted) / 0.2);
+}
+
+.availability-calendar-container .rbc-label {
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Toolbar */
+.availability-calendar-container .rbc-toolbar {
+  padding: 14px 20px;
+  margin-bottom: 20px;
+  background: hsl(var(--muted) / 0.4);
+  border-radius: 10px;
+  border: 1px solid hsl(var(--border));
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.availability-calendar-container .rbc-toolbar-label {
+  flex-grow: 1;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+}
+
+.availability-calendar-container .rbc-toolbar button {
+  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border));
+  background: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.availability-calendar-container .rbc-toolbar button:hover {
+  background: hsl(var(--accent));
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.availability-calendar-container .rbc-toolbar button:active {
+  transform: translateY(0);
+}
+
+.availability-calendar-container .rbc-toolbar button.rbc-active {
+  background: hsl(var(--primary));
+  color: white;
+  border-color: hsl(var(--primary));
+  box-shadow: 0 2px 6px hsla(var(--primary) / 0.3);
+}
+
+/* Show More Link */
+.availability-calendar-container .rbc-show-more {
+  color: hsl(var(--primary));
+  font-weight: 600;
+  font-size: 12px;
+  background: hsl(var(--primary) / 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-top: 4px;
+  display: inline-block;
+}
+
+.availability-calendar-container .rbc-show-more:hover {
+  background: hsl(var(--primary) / 0.2);
+}
+
+/* Overlay/Popup */
+.availability-calendar-container .rbc-overlay {
+  background: white;
+  border: 1px solid hsl(var(--border));
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+}
+
+.availability-calendar-container .rbc-overlay-header {
+  padding: 8px 12px;
+  border-bottom: 2px solid hsl(var(--border));
+  margin-bottom: 12px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* Selection */
+.availability-calendar-container .rbc-selected-cell {
+  background-color: hsl(var(--primary) / 0.1);
+}
+
+.availability-calendar-container .rbc-selecting {
+  background-color: hsl(var(--primary) / 0.15);
+}
+
+/* Scrollbar Styling */
+.availability-calendar-container .rbc-time-content::-webkit-scrollbar {
+  width: 10px;
+}
+
+.availability-calendar-container .rbc-time-content::-webkit-scrollbar-track {
+  background: hsl(var(--muted) / 0.3);
+  border-radius: 10px;
+}
+
+.availability-calendar-container .rbc-time-content::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 10px;
+}
+
+.availability-calendar-container .rbc-time-content::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .availability-calendar-container .rbc-toolbar {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .availability-calendar-container .rbc-toolbar-label {
+    font-size: 16px;
+  }
+  
+  .availability-calendar-container .rbc-month-row {
+    min-height: 80px !important;
+  }
+}
