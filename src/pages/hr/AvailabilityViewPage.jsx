@@ -1,4 +1,4 @@
-// src/pages/hr/AvailabilityViewPage.jsx
+// src/pages/hr/AvailabilityViewPage.jsx - UPDATED WITH DESIGNATION/TIER FILTERS
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -12,13 +12,14 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import enUS from 'date-fns/locale/en-US';
-import { Calendar as CalendarIcon, Filter, X, User, Mail, Briefcase, Code, Clock, Send } from 'lucide-react';
+import { Calendar as CalendarIcon, Filter, X, User, Mail, Briefcase, Code, Clock, Send, TrendingUp, Award } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from '@/hooks/use-toast';
 import { hrAvailabilityAPI } from '@/services/hrAvailabilityAPI';
 import { departmentAPI } from '@/services/departmentAPI';
 import { technologyAPI } from '@/services/technologyAPI';
 import { designationAPI } from '@/services/designationAPI';
+import { tierAPI } from '@/services/tierAPI';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import '../interviewer/AvailabilityCalendar.css';
 
@@ -36,12 +37,19 @@ const AvailabilityViewPage = () => {
   const [departments, setDepartments] = useState([]);
   const [technologies, setTechnologies] = useState([]);
   const [designations, setDesignations] = useState([]);
+  const [tiers, setTiers] = useState([]);
   
   // Filters
   const [filterDept, setFilterDept] = useState([]);
   const [filterTech, setFilterTech] = useState([]);
   const [minExperience, setMinExperience] = useState('');
   const [dateRange, setDateRange] = useState({ start: null, end: null });
+  
+  // NEW: Designation and Tier filters
+  const [selectedDeptForDesignation, setSelectedDeptForDesignation] = useState('');
+  const [minDesignationLevel, setMinDesignationLevel] = useState('');
+  const [minTierOrder, setMinTierOrder] = useState('');
+  const [designationsForSelectedDept, setDesignationsForSelectedDept] = useState([]);
   
   // Dialog states
   const [requestDialogOpen, setRequestDialogOpen] = useState(false);
@@ -60,21 +68,33 @@ const AvailabilityViewPage = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [filterDept, filterTech, minExperience, dateRange]);
+  }, [filterDept, filterTech, minExperience, dateRange, selectedDeptForDesignation, minDesignationLevel, minTierOrder]);
+
+  // NEW: Load designations when department for designation filter changes
+  useEffect(() => {
+    if (selectedDeptForDesignation) {
+      loadDesignationsForDepartment(selectedDeptForDesignation);
+    } else {
+      setDesignationsForSelectedDept([]);
+      setMinDesignationLevel('');
+    }
+  }, [selectedDeptForDesignation]);
 
   const loadInitialData = async () => {
     try {
       setLoading(true);
-      const [availabilityData, deptData, techData, desigData] = await Promise.all([
+      const [availabilityData, deptData, techData, desigData, tierData] = await Promise.all([
         hrAvailabilityAPI.getAllAvailability(),
         departmentAPI.getAllDepartments(),
         technologyAPI.getAllTechnologies(),
-        designationAPI.getAllDesignations()
+        designationAPI.getAllDesignations(),
+        tierAPI.getAllTiers()
       ]);
 
       setDepartments(deptData);
       setTechnologies(techData);
       setDesignations(desigData);
+      setTiers(tierData);
 
       const formattedEvents = availabilityData.map(slot => ({
         id: slot.slotId,
@@ -86,7 +106,9 @@ const AvailabilityViewPage = () => {
           ...slot,
           interviewer: slot.interviewerName,
           department: slot.department,
+          designation: slot.designation,
           skills: slot.technologies,
+          yearsOfExperience: slot.yearsOfExperience
         },
       }));
 
@@ -102,6 +124,15 @@ const AvailabilityViewPage = () => {
     }
   };
 
+  const loadDesignationsForDepartment = async (departmentId) => {
+    try {
+      const designations = await designationAPI.getDesignationsByDepartment(parseInt(departmentId));
+      setDesignationsForSelectedDept(designations.sort((a, b) => a.levelOrder - b.levelOrder));
+    } catch (error) {
+      console.error('Failed to load designations:', error);
+    }
+  };
+
   const applyFilters = async () => {
     if (loading) return;
 
@@ -112,6 +143,11 @@ const AvailabilityViewPage = () => {
         minYearsOfExperience: minExperience ? parseInt(minExperience) : null,
         startDateTime: dateRange.start ? dateRange.start.toISOString() : null,
         endDateTime: dateRange.end ? dateRange.end.toISOString() : null,
+        // NEW: Designation filter
+        departmentIdForDesignationFilter: selectedDeptForDesignation ? parseInt(selectedDeptForDesignation) : null,
+        minDesignationLevelInDepartment: minDesignationLevel ? parseInt(minDesignationLevel) : null,
+        // NEW: Tier filter
+        minTierId: minTierOrder ? parseInt(minTierOrder) : null
       };
 
       const data = await hrAvailabilityAPI.getAllAvailability(filters);
@@ -126,7 +162,9 @@ const AvailabilityViewPage = () => {
           ...slot,
           interviewer: slot.interviewerName,
           department: slot.department,
+          designation: slot.designation,
           skills: slot.technologies,
+          yearsOfExperience: slot.yearsOfExperience
         },
       }));
 
@@ -180,7 +218,7 @@ const AvailabilityViewPage = () => {
 
       setRequestDialogOpen(false);
       setSelectedSlot(null);
-      applyFilters(); // Reload to remove the booked slot
+      applyFilters();
     } catch (error) {
       toast({
         title: 'Failed to send request',
@@ -195,6 +233,10 @@ const AvailabilityViewPage = () => {
     setFilterTech([]);
     setMinExperience('');
     setDateRange({ start: null, end: null });
+    setSelectedDeptForDesignation('');
+    setMinDesignationLevel('');
+    setMinTierOrder('');
+    setDesignationsForSelectedDept([]);
   };
 
   const eventStyleGetter = () => {
@@ -243,7 +285,8 @@ const AvailabilityViewPage = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Department Filter */}
               <div className="space-y-2">
                 <Label>Department</Label>
                 <Select
@@ -264,6 +307,7 @@ const AvailabilityViewPage = () => {
                 </Select>
               </div>
 
+              {/* Technology Filter */}
               <div className="space-y-2">
                 <Label>Technology</Label>
                 <Select
@@ -284,6 +328,7 @@ const AvailabilityViewPage = () => {
                 </Select>
               </div>
 
+              {/* Min Experience Filter */}
               <div className="space-y-2">
                 <Label>Min. Experience (Years)</Label>
                 <Input
@@ -295,12 +340,85 @@ const AvailabilityViewPage = () => {
                 />
               </div>
 
+              {/* NEW: Department for Designation Filter */}
               <div className="space-y-2">
-                <Label>Results</Label>
-                <div className="text-2xl font-bold text-primary">
-                  {events.length}
-                </div>
-                <p className="text-xs text-muted-foreground">Available slots</p>
+                <Label className="flex items-center gap-2">
+                  <Award className="w-4 h-4" />
+                  Filter by Designation Level - Department
+                </Label>
+                <Select
+                  value={selectedDeptForDesignation || "NONE"}
+                  onValueChange={(value) => setSelectedDeptForDesignation(value === "NONE" ? "" : value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NONE">None</SelectItem>
+                    {departments.map((dept) => (
+                      <SelectItem key={dept.id} value={dept.id.toString()}>
+                        {dept.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* NEW: Min Designation Level Filter */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4" />
+                  Min. Designation Level
+                </Label>
+                <Select
+                  value={minDesignationLevel || "ANY"}
+                  onValueChange={(value) => setMinDesignationLevel(value === "ANY" ? "" : value)}
+                  disabled={!selectedDeptForDesignation}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={selectedDeptForDesignation ? "Select Level" : "Select Department First"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ANY">Any Level</SelectItem>
+                    {designationsForSelectedDept.map((desig) => (
+                      <SelectItem key={desig.id} value={desig.levelOrder.toString()}>
+                        Level {desig.levelOrder} - {desig.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* NEW: Min Tier Filter */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Award className="w-4 h-4" />
+                  Min. Tier
+                </Label>
+                <Select
+                  value={minTierOrder || "ANY"}
+                  onValueChange={(value) => setMinTierOrder(value === "ANY" ? "" : value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Any Tier" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ANY">Any Tier</SelectItem>
+                    {tiers.sort((a, b) => a.tierOrder - b.tierOrder).map((tier) => (
+                      <SelectItem key={tier.id} value={tier.tierOrder.toString()}>
+                        Tier {tier.tierOrder} - {tier.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Results Count */}
+            <div className="mt-6 p-4 bg-primary/5 rounded-lg border border-primary/20">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-muted-foreground">Available Slots Found:</span>
+                <span className="text-3xl font-bold text-primary">{events.length}</span>
               </div>
             </div>
           </CardContent>
@@ -359,7 +477,7 @@ const AvailabilityViewPage = () => {
                     min={new Date(1970, 0, 1, 7, 0)}
                     max={new Date(1970, 0, 1, 19, 0)}
                     tooltipAccessor={(event) =>
-                      `${event.resource.interviewer} - ${event.resource.skills.join(', ')}`
+                      `${event.resource.interviewer} - ${event.resource.designation || 'N/A'} - ${event.resource.skills.join(', ')}`
                     }
                   />
                 </motion.div>
@@ -391,7 +509,7 @@ const AvailabilityViewPage = () => {
                     <User className="w-5 h-5 text-primary" />
                     <div>
                       <p className="font-semibold">{selectedSlot.resource.interviewer}</p>
-                      <p className="text-sm text-muted-foreground">{selectedSlot.resource.designation}</p>
+                      <p className="text-sm text-muted-foreground">{selectedSlot.resource.designation || 'N/A'}</p>
                     </div>
                   </div>
                   
@@ -404,6 +522,13 @@ const AvailabilityViewPage = () => {
                     <Clock className="w-5 h-5 text-primary" />
                     <p className="text-sm">
                       {format(selectedSlot.start, 'PPP')} • {format(selectedSlot.start, 'p')} - {format(selectedSlot.end, 'p')}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <TrendingUp className="w-5 h-5 text-primary" />
+                    <p className="text-sm">
+                      {selectedSlot.resource.yearsOfExperience || 0} years of experience
                     </p>
                   </div>
 
