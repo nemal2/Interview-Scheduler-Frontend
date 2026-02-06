@@ -1,4 +1,4 @@
-// src/pages/hr/AvailabilityViewPage.jsx - UPDATED WITH DESIGNATION/TIER FILTERS
+// src/pages/hr/AvailabilityViewPage.jsx - UPDATED WITH CANDIDATE SELECTION
 import React, { useState, useEffect } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import enUS from 'date-fns/locale/en-US';
-import { Calendar as CalendarIcon, Filter, X, User, Mail, Briefcase, Code, Clock, Send, TrendingUp, Award } from 'lucide-react';
+import { Calendar as CalendarIcon, Filter, X, User, Mail, Briefcase, Code, Clock, Send, TrendingUp, Award, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from '@/hooks/use-toast';
 import { hrAvailabilityAPI } from '@/services/hrAvailabilityAPI';
@@ -20,6 +20,7 @@ import { departmentAPI } from '@/services/departmentAPI';
 import { technologyAPI } from '@/services/technologyAPI';
 import { designationAPI } from '@/services/designationAPI';
 import { tierAPI } from '@/services/tierAPI';
+import { candidateAPI } from '@/services/candidateAPI';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import '../interviewer/AvailabilityCalendar.css';
 
@@ -38,14 +39,13 @@ const AvailabilityViewPage = () => {
   const [technologies, setTechnologies] = useState([]);
   const [designations, setDesignations] = useState([]);
   const [tiers, setTiers] = useState([]);
+  const [candidates, setCandidates] = useState([]);
   
   // Filters
   const [filterDept, setFilterDept] = useState([]);
   const [filterTech, setFilterTech] = useState([]);
   const [minExperience, setMinExperience] = useState('');
   const [dateRange, setDateRange] = useState({ start: null, end: null });
-  
-  // NEW: Designation and Tier filters
   const [selectedDeptForDesignation, setSelectedDeptForDesignation] = useState('');
   const [minDesignationLevel, setMinDesignationLevel] = useState('');
   const [minTierOrder, setMinTierOrder] = useState('');
@@ -54,7 +54,9 @@ const AvailabilityViewPage = () => {
   // Dialog states
   const [requestDialogOpen, setRequestDialogOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
+  const [candidateSearchTerm, setCandidateSearchTerm] = useState('');
   const [requestForm, setRequestForm] = useState({
+    candidateId: null,
     candidateName: '',
     candidateDesignationId: '',
     requiredTechnologyIds: [],
@@ -70,7 +72,6 @@ const AvailabilityViewPage = () => {
     applyFilters();
   }, [filterDept, filterTech, minExperience, dateRange, selectedDeptForDesignation, minDesignationLevel, minTierOrder]);
 
-  // NEW: Load designations when department for designation filter changes
   useEffect(() => {
     if (selectedDeptForDesignation) {
       loadDesignationsForDepartment(selectedDeptForDesignation);
@@ -83,18 +84,20 @@ const AvailabilityViewPage = () => {
   const loadInitialData = async () => {
     try {
       setLoading(true);
-      const [availabilityData, deptData, techData, desigData, tierData] = await Promise.all([
+      const [availabilityData, deptData, techData, desigData, tierData, candidatesData] = await Promise.all([
         hrAvailabilityAPI.getAllAvailability(),
         departmentAPI.getAllDepartments(),
         technologyAPI.getAllTechnologies(),
         designationAPI.getAllDesignations(),
-        tierAPI.getAllTiers()
+        tierAPI.getAllTiers(),
+        candidateAPI.getAllCandidates()
       ]);
 
       setDepartments(deptData);
       setTechnologies(techData);
       setDesignations(desigData);
       setTiers(tierData);
+      setCandidates(candidatesData);
 
       const formattedEvents = availabilityData.map(slot => ({
         id: slot.slotId,
@@ -143,10 +146,8 @@ const AvailabilityViewPage = () => {
         minYearsOfExperience: minExperience ? parseInt(minExperience) : null,
         startDateTime: dateRange.start ? dateRange.start.toISOString() : null,
         endDateTime: dateRange.end ? dateRange.end.toISOString() : null,
-        // NEW: Designation filter
         departmentIdForDesignationFilter: selectedDeptForDesignation ? parseInt(selectedDeptForDesignation) : null,
         minDesignationLevelInDepartment: minDesignationLevel ? parseInt(minDesignationLevel) : null,
-        // NEW: Tier filter
         minTierId: minTierOrder ? parseInt(minTierOrder) : null
       };
 
@@ -177,6 +178,7 @@ const AvailabilityViewPage = () => {
   const handleEventClick = (event) => {
     setSelectedSlot(event);
     setRequestForm({
+      candidateId: null,
       candidateName: '',
       candidateDesignationId: '',
       requiredTechnologyIds: event.resource.skills.map(skill => {
@@ -186,14 +188,34 @@ const AvailabilityViewPage = () => {
       isUrgent: false,
       notes: ''
     });
+    setCandidateSearchTerm('');
     setRequestDialogOpen(true);
+  };
+
+  const handleSelectCandidate = (candidate) => {
+    setRequestForm({
+      ...requestForm,
+      candidateId: candidate.id,
+      candidateName: candidate.name,
+      candidateDesignationId: candidate.targetDesignationId || ''
+    });
+    setCandidateSearchTerm('');
+  };
+
+  const handleClearCandidate = () => {
+    setRequestForm({
+      ...requestForm,
+      candidateId: null,
+      candidateName: '',
+      candidateDesignationId: ''
+    });
   };
 
   const handleSendRequest = async () => {
     if (!requestForm.candidateName.trim()) {
       toast({
         title: 'Validation Error',
-        description: 'Please enter candidate name',
+        description: 'Please select or enter a candidate name',
         variant: 'destructive',
       });
       return;
@@ -201,6 +223,7 @@ const AvailabilityViewPage = () => {
 
     try {
       await hrAvailabilityAPI.createInterviewRequest({
+        candidateId: requestForm.candidateId,
         candidateName: requestForm.candidateName,
         candidateDesignationId: requestForm.candidateDesignationId || null,
         requiredTechnologyIds: requestForm.requiredTechnologyIds,
@@ -212,17 +235,17 @@ const AvailabilityViewPage = () => {
       });
 
       toast({
-        title: '✓ Interview request sent',
-        description: `Request sent to ${selectedSlot.resource.interviewer}`,
+        title: '✓ Interview scheduled',
+        description: `Interview scheduled for ${requestForm.candidateName} with ${selectedSlot.resource.interviewer}`,
       });
 
       setRequestDialogOpen(false);
       setSelectedSlot(null);
-      applyFilters();
+      applyFilters(); // Refresh to remove the booked slot
     } catch (error) {
       toast({
-        title: 'Failed to send request',
-        description: error.response?.data?.message || 'Unable to send interview request',
+        title: 'Failed to schedule interview',
+        description: error.response?.data?.message || 'Unable to schedule interview',
         variant: 'destructive',
       });
     }
@@ -255,6 +278,13 @@ const AvailabilityViewPage = () => {
       },
     };
   };
+
+  // Filter candidates based on search term
+  const filteredCandidates = candidates.filter(c =>
+    c.name.toLowerCase().includes(candidateSearchTerm.toLowerCase()) ||
+    c.email.toLowerCase().includes(candidateSearchTerm.toLowerCase()) ||
+    (c.targetDesignationName && c.targetDesignationName.toLowerCase().includes(candidateSearchTerm.toLowerCase()))
+  );
 
   return (
     <Layout>
@@ -340,7 +370,7 @@ const AvailabilityViewPage = () => {
                 />
               </div>
 
-              {/* NEW: Department for Designation Filter */}
+              {/* Department for Designation Filter */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <Award className="w-4 h-4" />
@@ -364,7 +394,7 @@ const AvailabilityViewPage = () => {
                 </Select>
               </div>
 
-              {/* NEW: Min Designation Level Filter */}
+              {/* Min Designation Level Filter */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <TrendingUp className="w-4 h-4" />
@@ -389,7 +419,7 @@ const AvailabilityViewPage = () => {
                 </Select>
               </div>
 
-              {/* NEW: Min Tier Filter */}
+              {/* Min Tier Filter */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
                   <Award className="w-4 h-4" />
@@ -432,7 +462,7 @@ const AvailabilityViewPage = () => {
               Availability Calendar
             </CardTitle>
             <CardDescription>
-              Click on any availability slot to send an interview request
+              Click on any availability slot to schedule an interview
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -487,16 +517,16 @@ const AvailabilityViewPage = () => {
         </Card>
       </div>
 
-      {/* Interview Request Dialog */}
+      {/* Interview Schedule Dialog */}
       <Dialog open={requestDialogOpen} onOpenChange={setRequestDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-2xl">
               <Send className="w-6 h-6 text-primary" />
-              Send Interview Request
+              Schedule Interview
             </DialogTitle>
             <DialogDescription>
-              Request an interview with {selectedSlot?.resource.interviewer}
+              Schedule an interview with {selectedSlot?.resource.interviewer}
             </DialogDescription>
           </DialogHeader>
 
@@ -545,20 +575,89 @@ const AvailabilityViewPage = () => {
                 </CardContent>
               </Card>
 
-              {/* Request Form */}
+              {/* Candidate Selection */}
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="candidateName">Candidate Name *</Label>
-                  <Input
-                    id="candidateName"
-                    placeholder="Enter candidate name"
-                    value={requestForm.candidateName}
-                    onChange={(e) => setRequestForm({ ...requestForm, candidateName: e.target.value })}
-                  />
+                  <Label>Select Candidate *</Label>
+                  
+                  {requestForm.candidateId ? (
+                    // Show selected candidate
+                    <div className="p-4 border rounded-lg bg-primary/5 border-primary/20">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">{requestForm.candidateName}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {candidates.find(c => c.id === requestForm.candidateId)?.email}
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleClearCandidate}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Search candidates */}
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Search candidates by name, email, or position..."
+                          value={candidateSearchTerm}
+                          onChange={(e) => setCandidateSearchTerm(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
+
+                      {/* Candidate list */}
+                      {candidateSearchTerm && (
+                        <div className="max-h-48 overflow-y-auto border rounded-lg">
+                          {filteredCandidates.length === 0 ? (
+                            <p className="p-4 text-center text-sm text-muted-foreground">
+                              No candidates found. You can enter a name manually below.
+                            </p>
+                          ) : (
+                            <div className="divide-y">
+                              {filteredCandidates.map((candidate) => (
+                                <button
+                                  key={candidate.id}
+                                  onClick={() => handleSelectCandidate(candidate)}
+                                  className="w-full p-3 hover:bg-accent text-left transition-colors"
+                                >
+                                  <p className="font-medium">{candidate.name}</p>
+                                  <p className="text-sm text-muted-foreground">{candidate.email}</p>
+                                  {candidate.targetDesignationName && (
+                                    <p className="text-xs text-muted-foreground">
+                                      {candidate.targetDesignationName}
+                                    </p>
+                                  )}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Manual entry option */}
+                      <div className="space-y-2">
+                        <Label className="text-sm text-muted-foreground">
+                          Or enter candidate name manually
+                        </Label>
+                        <Input
+                          placeholder="Enter candidate name"
+                          value={requestForm.candidateName}
+                          onChange={(e) => setRequestForm({ ...requestForm, candidateName: e.target.value })}
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="designation">Designation</Label>
+                  <Label htmlFor="designation">Designation (Optional)</Label>
                   <Select
                     value={requestForm.candidateDesignationId?.toString() || ""}
                     onValueChange={(value) => setRequestForm({ ...requestForm, candidateDesignationId: parseInt(value) })}
@@ -623,7 +722,7 @@ const AvailabilityViewPage = () => {
             </Button>
             <Button onClick={handleSendRequest} className="gap-2">
               <Send className="w-4 h-4" />
-              Send Request
+              Schedule Interview
             </Button>
           </DialogFooter>
         </DialogContent>

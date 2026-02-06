@@ -2,29 +2,41 @@
 import api from './api';
 
 export const interviewRequestAPI = {
-  // Get my interview requests (for interviewers)
-  getMyRequests: async () => {
-    const response = await api.get('/interview-requests/my-requests');
+  // Create interview request (auto-accepted)
+  createRequest: async (requestData) => {
+    const response = await api.post('/interview-requests', requestData);
     return response.data;
   },
 
-  // Get pending requests
-  getPendingRequests: async () => {
-    const response = await api.get('/interview-requests/pending');
+  // Get interviewer's all interviews
+  getMyInterviews: async () => {
+    const response = await api.get('/interview-requests/my-interviews');
     return response.data;
   },
 
-  // Respond to interview request
-  respondToRequest: async (requestId, responseData) => {
-    const response = await api.post(`/interview-requests/${requestId}/respond`, responseData);
+  // Get upcoming interviews for interviewer
+  getUpcomingInterviews: async () => {
+    const response = await api.get('/interview-requests/upcoming');
     return response.data;
   },
 
-  // Get request stats
-  getRequestStats: async () => {
+  // Get HR's created requests
+  getHRRequests: async () => {
+    const response = await api.get('/interview-requests/hr-requests');
+    return response.data;
+  },
+
+  // Cancel interview request (HR only)
+  cancelRequest: async (requestId) => {
+    const response = await api.delete(`/interview-requests/${requestId}/cancel`);
+    return response.data;
+  },
+
+  // Get statistics
+  getStats: async () => {
     const response = await api.get('/interview-requests/stats');
     return response.data;
-  }
+  },
 };
 
 export default interviewRequestAPI;
